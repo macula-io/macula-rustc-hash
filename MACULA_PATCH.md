@@ -1,15 +1,18 @@
-# Macula fork of `rustc-hash` 2.1.2
+# Macula fork of `rustc-hash` 2.1.2 (macula2)
 
 Vendored fork of [rust-lang/rustc-hash](https://github.com/rust-lang/rustc-hash)
-at version `2.1.2`, with a single patch flipping the default feature set
-from `["std"]` to `[]` so `no_std` consumers (via Cargo's `[patch.crates-io]`)
-do not get `std` re-enabled through feature unification.
+at version `2.1.2`, with two patches: (1) default-feature flip from `["std"]`
+to `[]`, and (2) `FxHashMap` / `FxHashSet` route through `hashbrown` when the
+`std` feature is off, so `no_std` consumers retain the type aliases that
+upstream only emits in `std` mode.
 
 Used by [macula-kernel](https://codeberg.org/macula-internal/macula-kernel)
 to satisfy `quinn-proto`'s transitive dependency on `rustc-hash` without
 pulling `std` into the kernel target.
 
-## The patch
+## The patches
+
+### Cargo.toml — default-feature flip + hashbrown dep
 
 ```diff
  [features]
@@ -17,10 +20,30 @@ pulling `std` into the kernel target.
 +default = []
  std = []
  nightly = []
++
++[dependencies.hashbrown]
++version = "0.15"
++default-features = false
++features = ["default-hasher"]
 ```
 
-Applied to both `Cargo.toml` (cargo-normalized) and `Cargo.toml.orig`
-(upstream hand-written).
+### src/lib.rs — FxHashMap / FxHashSet aliases for no_std
+
+```diff
+ #[cfg(feature = "std")]
+ pub type FxHashMap<K, V> = HashMap<K, V, FxBuildHasher>;
++#[cfg(not(feature = "std"))]
++pub type FxHashMap<K, V> = hashbrown::HashMap<K, V, FxBuildHasher>;
+
+ #[cfg(feature = "std")]
+ pub type FxHashSet<V> = HashSet<V, FxBuildHasher>;
++#[cfg(not(feature = "std"))]
++pub type FxHashSet<V> = hashbrown::HashSet<V, FxBuildHasher>;
+```
+
+Both patches applied to `Cargo.toml` (cargo-normalized). `Cargo.toml.orig`
+also updated for the feature flip; hashbrown dep lives in the normalized
+form only because the orig is workspace-driven.
 
 ## Why this is needed
 

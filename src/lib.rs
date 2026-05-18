@@ -38,12 +38,20 @@ use core::hash::{BuildHasher, Hasher};
 use std::collections::{HashMap, HashSet};
 
 /// Type alias for a hash map that uses the Fx hashing algorithm.
+///
+/// On `std` builds this is `std::collections::HashMap<K, V, FxBuildHasher>`.
+/// In `no_std` macula builds it is `hashbrown::HashMap<K, V, FxBuildHasher>`,
+/// which is the same map implementation rustc's `std` HashMap is built on.
 #[cfg(feature = "std")]
 pub type FxHashMap<K, V> = HashMap<K, V, FxBuildHasher>;
+#[cfg(not(feature = "std"))]
+pub type FxHashMap<K, V> = hashbrown::HashMap<K, V, FxBuildHasher>;
 
 /// Type alias for a hash set that uses the Fx hashing algorithm.
 #[cfg(feature = "std")]
 pub type FxHashSet<V> = HashSet<V, FxBuildHasher>;
+#[cfg(not(feature = "std"))]
+pub type FxHashSet<V> = hashbrown::HashSet<V, FxBuildHasher>;
 
 #[cfg(feature = "rand")]
 pub use random_state::{FxHashMapRand, FxHashSetRand, FxRandomState};
