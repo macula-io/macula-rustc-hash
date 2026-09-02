@@ -6,7 +6,7 @@ to `[]`, and (2) `FxHashMap` / `FxHashSet` route through `hashbrown` when the
 `std` feature is off, so `no_std` consumers retain the type aliases that
 upstream only emits in `std` mode.
 
-Used by [macula-kernel](https://codeberg.org/macula-internal/macula-kernel)
+Used by [macula-kernel](https://github.com/macula-io/macula-kernel)
 to satisfy `quinn-proto`'s transitive dependency on `rustc-hash` without
 pulling `std` into the kernel target.
 
